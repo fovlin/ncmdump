@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"os"
+	"strings"
 
 	"acovia.net/record"
 )
@@ -54,7 +55,8 @@ func main() {
 	audioData, err := getAudio(ncmFile, audioKey)
 	record.CheckErr(err, "(get audio data) %v", err)
 
-	os.WriteFile("out.mp3", audioData, 0700)
+	outputFileName := strings.Replace(ncmFileName, ".ncm", ".wav", 1)
+	os.WriteFile(outputFileName, audioData, 0700)
 
 }
 
