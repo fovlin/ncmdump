@@ -13,9 +13,6 @@ import (
 	"acovia.net/record"
 )
 
-var (
-	ncmFileName string
-)
 func unPadding(data []byte) []byte {
 	dataLength := len(data)
 	padLength := int(data[dataLength-1])
@@ -26,38 +23,41 @@ func main() {
 
 	flag.Parse()
 
-	if len(flag.Arg(0)) != 0 {
-		ncmFileName = flag.Arg(0)
-	} else {
-		os.Exit(1)
+	filsList := flag.Args()
+
+	if len(filsList) == 0 {
+		record.Error("input file missing")
 	}
 
-	coreKey, metaKey, err := getKnownKey()
-	record.CheckErr(err, "(get known key) %v", err)
+	for _, ncmFileName := range filsList {
 
-	ncmFile, err := os.Open(ncmFileName)
-	record.CheckErr(err, "(open file) %v", err)
+		coreKey, metaKey, err := getKnownKey()
+		record.CheckErr(err, "(get known key) %v", err)
 
-	checkHeader(ncmFile)
-	record.Info("file header validation passed")
+		ncmFile, err := os.Open(ncmFileName)
+		record.CheckErr(err, "(open file) %v", err)
 
-	audioKey, err := getAudioKey(ncmFile, coreKey)
-	record.CheckErr(err, "(get audio key) %v", err)
-	record.Info("audio key: %v", string(audioKey))
+		checkHeader(ncmFile)
+		record.Info("file header validation passed")
 
-	metaData, err := getMetaData(ncmFile, metaKey)
-	record.CheckErr(err, "(get meta data) %v", err)
-	record.Info("meta data: %v", string(metaData))
+		audioKey, err := getAudioKey(ncmFile, coreKey)
+		record.CheckErr(err, "(get audio key) %v", err)
+		record.Info("audio key: %v", string(audioKey))
 
-	_, err = getImgData(ncmFile)
-	record.CheckErr(err, "(get image data) %v", err)
+		metaData, err := getMetaData(ncmFile, metaKey)
+		record.CheckErr(err, "(get meta data) %v", err)
+		record.Info("meta data: %v", string(metaData))
 
-	audioData, err := getAudio(ncmFile, audioKey)
-	record.CheckErr(err, "(get audio data) %v", err)
+		_, err = getImgData(ncmFile)
+		record.CheckErr(err, "(get image data) %v", err)
 
-	outputFileName := strings.Replace(ncmFileName, ".ncm", ".wav", 1)
-	os.WriteFile(outputFileName, audioData, 0700)
+		audioData, err := getAudio(ncmFile, audioKey)
+		record.CheckErr(err, "(get audio data) %v", err)
 
+		outputFileName := strings.Replace(ncmFileName, ".ncm", ".wav", 1)
+		os.WriteFile(outputFileName, audioData, 0700)
+
+	}
 }
 
 func decipher(data []byte, key []byte) ([]byte, error) {
@@ -152,7 +152,6 @@ func getMetaData(ncmFile *os.File, metaKey []byte) ([]byte, error) {
 	}
 
 	metaDataLength := binary.LittleEndian.Uint32(metaDataLengthData)
-	record.Debug("%v", metaDataLength)
 
 	enMetaData := make([]byte, metaDataLength)
 	_, err = ncmFile.Read(enMetaData)
