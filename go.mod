@@ -1,4 +1,4 @@
-module acovia.net/convncm
+module acovia.net/ncmdump
 
 go 1.27.0
 
